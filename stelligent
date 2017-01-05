@@ -1,0 +1,2 @@
+#!/bin/bash
+brew install awscli && aws cloudformation create-stack --stack-name stelligent-example --template-body stelligent-example.yaml
