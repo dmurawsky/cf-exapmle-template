@@ -1,0 +1,55 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Single-command Deployment Example for Stelligent
+Resources:
+  HelloStelligent:
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          InstallAndRun:
+            - HomePage
+        HomePage:
+          packages:
+            yum:
+              httpd: []
+          files:
+            /var/www/html/index.html:
+              content: "<h1>Automation for the People</h1>"
+              mode: "000777"
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              httpd:
+                enabled: true
+                ensureRunning: true
+    Properties:
+      ImageId: ami-1ecae776
+      InstanceType: t2.micro
+      SecurityGroups:
+        -
+          Ref: StelligentSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum update -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource HelloStelligent --configsets InstallAndRun --region ${AWS::Region}
+    Type: AWS::EC2::Instance
+  StelligentSecurityGroup:
+    Properties:
+      GroupDescription: Stelligent Example Security Group
+      SecurityGroupIngress:
+        -
+          CidrIp: 0.0.0.0/0
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        -
+          CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+    Type: AWS::EC2::SecurityGroup
+Outputs:
+  URL:
+    Value: !GetAtt HelloStelligent.PublicIp

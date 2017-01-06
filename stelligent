@@ -1,2 +1,46 @@
 #!/bin/bash
-brew install awscli && aws cloudformation create-stack --stack-name stelligent-example --template-body stelligent-example.yaml
+brew install awscli
+
+# Add AWS profile credentials and config (we'll remove them at the end of the script)
+cat ~/.aws/credentials > ~/.aws/credentials_$1
+cat ~/.aws/config > ~/.aws/config_$1
+echo "" >> ~/.aws/credentials
+echo "[$1]" >> ~/.aws/credentials
+echo "aws_access_key_id = $2" >> ~/.aws/credentials
+echo "aws_secret_access_key = $3" >> ~/.aws/credentials
+
+echo '* Create S3 Bucket -------------------------------------------'
+aws s3api create-bucket --bucket $1 --region us-east-1 --profile $1
+
+echo '* cp Template to S3 ------------------------------------------'
+aws s3 cp cf-example.yaml s3://$1/cf-example.yaml --region us-east-1 --acl public-read --profile $1
+
+echo '* Create Stack -----------------------------------------------'
+echo 'Source: https://$1.s3.amazonaws.com/cf-example.yaml'
+aws cloudformation create-stack --stack-name $1 --template-url https://$1.s3.amazonaws.com/cf-example.yaml --region us-east-1 --profile $1
+
+# open https://console.aws.amazon.com/cloudformation/home?region=us-east-1
+
+echo '* Waiting for Create Stack to Complete -----------------------'
+aws cloudformation wait stack-create-complete --stack-name $1 --region us-east-1 --profile $1
+
+aws cloudformation describe-stacks --stack-name $1 --region us-east-1 --profile $1 > output.json
+
+open 'http://'`grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" output.json`
+
+curl 'http://'`grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" output.json` > test_output.html
+test_output=`cat test_output.html`
+original=`cat index.html`
+if [ "$test_output" = "$original" ]; then
+  echo 'TEST PASSED: Webpage contents read "Automation for the People"'
+else
+  echo 'TEST FAILED!'
+fi
+
+echo '* Delete S3 Bucket -------------------------------------------'
+aws s3 rm s3://$1/cf-example.yaml --region us-east-1 --profile $1
+aws s3api delete-bucket --bucket $1 --region us-east-1 --profile $1
+
+# Remove AWS Credentials that were added during the configure phase
+cat ~/.aws/credentials_$1 > ~/.aws/credentials
+rm ~/.aws/credentials_$1
