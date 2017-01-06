@@ -1,8 +1,8 @@
 ---
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Single-command Deployment Example for Stelligent
+Description: Single-command Deployment Example
 Resources:
-  HelloStelligent:
+  HelloCloud:
     Metadata:
       AWS::CloudFormation::Init:
         configSets:
@@ -28,28 +28,23 @@ Resources:
       InstanceType: t2.micro
       SecurityGroups:
         -
-          Ref: StelligentSecurityGroup
+          Ref: CloudSecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
           yum update -y aws-cfn-bootstrap
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource HelloStelligent --configsets InstallAndRun --region ${AWS::Region}
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource HelloCloud --configsets InstallAndRun --region ${AWS::Region}
     Type: AWS::EC2::Instance
-  StelligentSecurityGroup:
+  CloudSecurityGroup:
     Properties:
-      GroupDescription: Stelligent Example Security Group
+      GroupDescription: Example Security Group
       SecurityGroupIngress:
         -
           CidrIp: 0.0.0.0/0
           FromPort: 80
           IpProtocol: tcp
           ToPort: 80
-        -
-          CidrIp: 0.0.0.0/0
-          FromPort: 22
-          IpProtocol: tcp
-          ToPort: 22
     Type: AWS::EC2::SecurityGroup
 Outputs:
   URL:
-    Value: !GetAtt HelloStelligent.PublicIp
+    Value: !GetAtt HelloCloud.PublicIp
