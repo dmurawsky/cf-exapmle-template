@@ -16,4 +16,4 @@ $ ./test
 
 The *unique-stack-name* will be used to create both the CloudFormation stack and the S3 bucket where the CloudFormation template will be temporarily stored.
 
-* _This script will *brew install awscli*_
+NOTE: This script will run __brew install awscli__ before any other commands.
