@@ -1,6 +1,8 @@
 # Single Command Webpage Deployment
 
-### In your terminal (Mac):
+### In your terminal:
+
+_This script requires your aws_access_key_id & aws_secret_access_key_
 
 ```shell
 $ git clone https://github.com/dmurawsky/cf-exapmle-template
@@ -9,6 +11,9 @@ $ ./cloudup <unique-stack-name> <aws_access_key_id> <aws_secret_access_key>
 ```
 
 ### Simple Curl Test:
+
+_This script also runs in the cloudup script_
+
 
 ```shell
 $ ./test

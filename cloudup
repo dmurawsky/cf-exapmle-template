@@ -1,7 +1,7 @@
 #!/bin/bash
 brew install awscli
 
-# Add AWS profile credentials and config (we'll remove them at the end of the script)
+# Temporarily add AWS profile credentials (we'll remove them at the end of the script)
 cat ~/.aws/credentials > ~/.aws/credentials_$1
 echo "" >> ~/.aws/credentials
 echo "[$1]" >> ~/.aws/credentials
@@ -18,10 +18,13 @@ echo '* Creating Stack ---------------------------------------------------------
 echo 'Source: https://$1.s3.amazonaws.com/cf-example.yaml'
 aws cloudformation create-stack --stack-name $1 --template-url https://$1.s3.amazonaws.com/cf-example.yaml --region us-east-1 --profile $1
 
-# open https://console.aws.amazon.com/cloudformation/home?region=us-east-1
 
 echo '* Waiting for Create Stack to Complete --------------------------------------------------------'
 aws cloudformation wait stack-create-complete --stack-name $1 --region us-east-1 --profile $1
+
+echo '* STACK CREATED!'
+read -n 1 -s -p 'Press any key to open the AWS CloudFormation Console'
+open https://console.aws.amazon.com/cloudformation/home?region=us-east-1
 
 echo '* Waiting for EC2 Status OK -------------------------------------------------------------------'
 aws ec2 wait instance-running --filters 'Name=tag-value,Values='$1 --no-paginate --region us-east-1 --profile $1
@@ -31,12 +34,10 @@ echo '* Deleting S3 Bucket -----------------------------------------------------
 aws s3 rm s3://$1/cf-example.yaml --region us-east-1 --profile $1
 aws s3api delete-bucket --bucket $1 --region us-east-1 --profile $1
 
-# Remove AWS Credentials that were added during the configure phase
+# Remove AWS Credentials that were added at the beginning of the script
 cat ~/.aws/credentials_$1 > ~/.aws/credentials
 rm ~/.aws/credentials_$1
 
 echo '* Testing -------------------------------------------------------------------------------------'
 # TEST: Compare the new stack's index.html to our local one
 ./test
-
-open 'http://'`grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" output.json`
